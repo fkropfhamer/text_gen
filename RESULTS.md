@@ -5,7 +5,7 @@
 
 ## pheme
 ### bert
-- simple: 
+- simple 5 epochs: 
 Loss: 0.348404198884964
 Accuracy: 0.8372092843055725
 

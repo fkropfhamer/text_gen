@@ -8,6 +8,7 @@ from tensorflow import keras
 from official.nlp import optimization
 import numpy as np
 from sklearn.model_selection import train_test_split
+import collections
 
 
 
@@ -43,13 +44,33 @@ def main():
     class_names = raw_ds.class_names
 
 
+    use_generated = True
+    if use_generated:
+        raw_generated = keras.utils.text_dataset_from_directory(
+        'data/pheme_simple_generated',
+        seed=seed
+        )
+
+        generated_xs = np.array([])
+        generated_ys = np.array([])
+
+        for x, y in raw_generated:
+            generated_xs = np.concatenate([generated_xs, x])
+            generated_ys = np.concatenate([generated_ys, y])
+
+        x_train = np.concatenate([x_train, generated_xs])
+        y_train = np.concatenate([y_train, generated_ys])
+
+        print("Num of duplicates ", len([item for item, count in collections.Counter(list(generated_xs)).items() if count > 1]))
+
+
 
     classfier = build_classfier_model()
 
     loss = keras.losses.BinaryCrossentropy(from_logits=True)
     metrics = tf.metrics.BinaryAccuracy()
 
-    epochs = 5
+    epochs = 10
     steps_per_epoch = len(x_train)
     num_trains_steps = steps_per_epoch * epochs
     num_warmup_steps = int(0.1*num_trains_steps)

@@ -1,6 +1,7 @@
 import gpt_2_simple as gpt2
 import os
 import uuid
+import collections
 
 def main():
     #train("pheme_non_rumor_simple", "./data/simple_non_rumor.csv")
@@ -8,18 +9,17 @@ def main():
     #train("pheme_non_rumor_reactions", "./data/reactions_non_rumor.csv")
     #train("pheme_rumor_reactions", "./data/reactions_rumor.csv") 
 
-    generate("pheme_non_rumor_simple", "./data/pheme_simple_generated", 'non_rumor')
-    #generate("pheme_rumor_simple", "./data/pheme_simple_generated", 'rumor')
+    #generate("pheme_non_rumor_simple", "./data/pheme_simple_generated", 'non_rumor')
+    generate("pheme_rumor_simple", "./data/pheme_simple_generated", 'rumor')
     
 def generate(run_name, dire, label):
     sess = gpt2.start_tf_sess()
 
     load_model(sess, run_name)
 
-    ftexts = []
-
+    ftexts = set()
     
-    max_gen = 4000
+    max_gen = 3000
 
     while len(ftexts) < max_gen:
         print(f"{len(ftexts)} / {max_gen}")
@@ -34,7 +34,8 @@ def generate(run_name, dire, label):
             s = map(lambda x: x.split("<|endoftext|>")[0], s)
 
             #print(list(s))
-            ftexts += s
+            ftexts = set.union(ftexts, set(s))
+
 
     print("saving")
 
@@ -47,9 +48,11 @@ def generate(run_name, dire, label):
 
     #print(texts)
 
-    print("Duplicates ", len([item for item, count in collections.Counter(a).items() if count > 1]))
+    print("Duplicates ", len([item for item, count in collections.Counter(ftexts).items() if count > 1]))
 
     #print(len(texts))
+
+    gpt2.reset_session(sess)
 
 def train(run_name, file_name):
     sess = gpt2.start_tf_sess()

@@ -21,16 +21,55 @@ def main():
     batch_size = 32
     seed = 55
 
-    
-    raw_ds = keras.utils.text_dataset_from_directory(
-        'data/pheme_with_reactions',
+    url = 'https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz'
+
+    dataset = tf.keras.utils.get_file('aclImdb_v1.tar.gz', url,
+                                  untar=True, cache_dir='./data',
+                                  cache_subdir='')
+
+    dataset_dir = os.path.join(os.path.dirname(dataset), 'aclImdb')
+
+    train_dir = os.path.join(dataset_dir, 'train')
+
+
+    remove_dir = os.path.join(train_dir, 'unsup')
+    shutil.rmtree(remove_dir)
+
+    raw_train_ds = tf.keras.utils.text_dataset_from_directory(
+        'data/aclImdb/train',
+        batch_size=batch_size,
+        validation_split=0.2,
+        subset='training',
         seed=seed
     )
+
+    class_names = raw_train_ds.class_names
+    train_ds = raw_train_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+    val_ds = tf.keras.utils.text_dataset_from_directory(
+        'data/aclImdb/train',
+        batch_size=batch_size,
+        validation_split=0.2,
+        subset='validation',
+        seed=seed
+    )
+
+    val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+    test_ds = tf.keras.utils.text_dataset_from_directory(
+        'data/aclImdb/test',
+        batch_size=batch_size)
+
+    test_ds = test_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+
+
+
 
     xs = np.array([])
     ys = np.array([])
 
-    for x, y in raw_ds:
+    for x, y in raw_train_ds:
         #print(x)
         #print(y)
         xs = np.concatenate([xs, x])
@@ -39,15 +78,14 @@ def main():
 
     print(xs.shape)
 
-    x_train, x_test, y_train, y_test = train_test_split(xs, ys, test_size=0.2)
 
-    class_names = raw_ds.class_names
+    class_names = raw_train_ds.class_names
 
 
     use_generated = False
     if use_generated:
         raw_generated = keras.utils.text_dataset_from_directory(
-        'data/pheme_simple_generated',
+        'data/imdb_generated',
         seed=seed
         )
 
@@ -85,7 +123,7 @@ def main():
 
     classfier.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-    history = classfier.fit(x_train, y_train, epochs=epochs, validation_split=0.1, batch_size=batch_size)
+    history = classfier.fit(x_train, y_train, epochs=epochs, validation_data=val_ds, batch_size=batch_size)
 
     loss, accuracy = classfier.evaluate(x_test, y_test, batch_size=batch_size)
 

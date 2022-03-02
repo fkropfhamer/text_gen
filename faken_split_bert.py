@@ -22,32 +22,30 @@ def main():
     seed = 55
 
     
-    raw_ds = keras.utils.text_dataset_from_directory(
-        'data/pheme_with_reactions',
+    raw_train_ds = keras.utils.text_dataset_from_directory(
+        'data/pheme_split/train',
         seed=seed
     )
 
-    xs = np.array([])
-    ys = np.array([])
+    raw_test_ds = keras.utils.text_dataset_from_directory(
+        'data/pheme_split/test'
+    )
 
-    for x, y in raw_ds:
-        #print(x)
-        #print(y)
-        xs = np.concatenate([xs, x])
-        ys = np.concatenate([ys, y])
+    x_train = np.array([])
+    y_train = np.array([])
+
+    for x, y in raw_train_ds:
+        x_train = np.concatenate([x_train, x])
+        y_train = np.concatenate([y_train, y])
         
 
-    print(xs.shape)
-
-    x_train, x_test, y_train, y_test = train_test_split(xs, ys, test_size=0.2)
-
-    class_names = raw_ds.class_names
+    class_names = raw_train_ds.class_names
 
 
     use_generated = False
     if use_generated:
         raw_generated = keras.utils.text_dataset_from_directory(
-        'data/pheme_simple_generated',
+        'data/pheme_split_simple_generated2',
         seed=seed
         )
 
@@ -87,7 +85,8 @@ def main():
 
     history = classfier.fit(x_train, y_train, epochs=epochs, validation_split=0.1, batch_size=batch_size)
 
-    loss, accuracy = classfier.evaluate(x_test, y_test, batch_size=batch_size)
+    loss, accuracy = classfier.evaluate(raw_test_ds, batch_size=batch_size)
+
 
     print(f'Loss: {loss}')
     print(f'Accuracy: {accuracy}')

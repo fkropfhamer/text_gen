@@ -6,35 +6,60 @@ import collections
 def main():
     #train("pheme_non_rumor_simple", "./data/simple_non_rumor.csv")
     #train("pheme_rumor_simple", "./data/simple_rumor.csv")   
-    #train("pheme_non_rumor_reactions", "./data/reactions_non_rumor.csv")
-    #train("pheme_rumor_reactions", "./data/reactions_rumor.csv") 
+    #train("pheme_non_rumor_reactions", "./data/reactions_non_rumor.csv", steps=3000)
+    #train("pheme_rumor_reactions", "./data/reactions_rumor.csv", steps=3000) 
 
     #generate("pheme_non_rumor_simple", "./data/pheme_simple_generated", 'non_rumor')
-    generate("pheme_rumor_simple", "./data/pheme_simple_generated", 'rumor')
+    #generate("pheme_rumor_simple", "./data/pheme_simple_generated", 'rumor')
+
+    #generate("pheme_non_rumor_reactions", "./data/reactions_generated", 'non_rumor')
+    #generate("pheme_rumor_reactions", "./data/reactions_generated", 'rumor') 
+
+
+    #train("imdb_neg", "./data/imdb_neg.csv")
+    #train("imdb_pos", "./data/imdb_pos.csv")
+
+    #generate("imdb_neg", "./data/imdb_generated", 'neg', num_samples=5000)
+    #generate("imdb_pos", "./data/imdb_generated", 'pos', num_samples=5000)
+
+    #train("pheme_split_non_rumor_simple", "./data/pheme_split_non_rumor.csv")
+    #train("pheme_split_rumor_simple", "./data/pheme_split_rumor.csv")
+
+    #generate("pheme_split_non_rumor_simple", "./data/pheme_split_simple_generated", "non_rumor", num_samples=1500)
+    #generate("pheme_split_rumor_simple", "./data/pheme_split_simple_generated", "rumor", num_samples=1500)
+
+    train("pheme_split_non_rumor_simple2", "./data/pheme_split_non_rumor.csv", steps=200)
+    train("pheme_split_rumor_simple2", "./data/pheme_split_rumor.csv", steps=200)
+
+    generate("pheme_split_non_rumor_simple2", "./data/pheme_split_simple_generated2", "non_rumor", num_samples=1500)
+    generate("pheme_split_rumor_simple2", "./data/pheme_split_simple_generated2", "rumor", num_samples=1500)
     
-def generate(run_name, dire, label):
+def generate(run_name, dire, label, num_samples=3000):
     sess = gpt2.start_tf_sess()
 
     load_model(sess, run_name)
 
     ftexts = set()
     
-    max_gen = 3000
+    max_gen = num_samples
 
     while len(ftexts) < max_gen:
         print(f"{len(ftexts)} / {max_gen}")
 
-        texts = gpt2.generate(sess, return_as_list=True,  nsamples=10)
+        texts = gpt2.generate(sess, return_as_list=True,  nsamples=50)
 
         for text in texts:
-            s = text.split("<|startoftext|>")
-            #print(len(s))
-            s.pop()
-            s.pop(0)
-            s = map(lambda x: x.split("<|endoftext|>")[0], s)
+            if "<|startoftext|>" in text:
+                s = text.split("<|startoftext|>")
+                #print(len(s))
+                s.pop()
+                s.pop(0)
+                s = map(lambda x: x.split("<|endoftext|>")[0], s)
 
-            #print(list(s))
-            ftexts = set.union(ftexts, set(s))
+                #print(list(s))
+                ftexts = set.union(ftexts, set(s))
+            else:
+                ftexts = set.union(ftexts, set(text))
 
 
     print("saving")
@@ -54,9 +79,12 @@ def generate(run_name, dire, label):
 
     gpt2.reset_session(sess)
 
-def train(run_name, file_name):
+def train(run_name, file_name, steps=1000):
     sess = gpt2.start_tf_sess()
-    finetune(sess, run_name, file_name)
+
+    finetune(sess, run_name, file_name, steps=steps)
+
+    gpt2.reset_session(sess)
 
 
 def download():
